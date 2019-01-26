@@ -28,6 +28,12 @@ src/index.js
 src/logo.svg
 src/registerServiceWorker.js
 
-public
+# public
 package.json
 README.md
+
+.env*
+.bash_history
+.glitch-assets
+.node-gyp
+public/bundle*

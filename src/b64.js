@@ -7,7 +7,22 @@ const ranges = [
   {bytes: 4, min: 0x10000, max: 0x10ffff, mask: '11110xxx10xxxxxx10xxxxxx10xxxxxx'}
 ];
 
-export function toUtf8Bin(char) {
+// https://github.com/facebook/react/blob/8482cbe22d1a421b73db602e1f470c632b09f693/packages/shared/ReactSymbols.js#L14-L16
+
+const B64_ERROR_TYPE = 0xB64;
+
+const throwError = (type, msg, data) => {
+  const self = { type };
+  
+  const error = new self.type(msg || undefined);
+  if (data) error.data = data;
+  
+  error.$$typeof = B64_ERROR_TYPE;
+    
+  throw error;
+};
+
+function toUtf8Bin(char) {
 
   const codepoint = char.codePointAt();
   let mask;
@@ -19,7 +34,7 @@ export function toUtf8Bin(char) {
   });
 
   if (!mask) {
-    throw new Error(`Invalid codepoint: ${codepoint}`);
+    throwError(RangeError, null, {'Invalid codepoint': codepoint});
   } else {
 
     let contentBits = mask.filter(el => el === 'x').length;
@@ -29,7 +44,7 @@ export function toUtf8Bin(char) {
     let cursor = 0;
     const bin = mask.map(el => {
 
-      let newEl;        
+      let newEl;
 
       if (el === 'x') {
         newEl = codepointBin[cursor];
@@ -40,18 +55,14 @@ export function toUtf8Bin(char) {
     }).join('');
 
     if (cursor !== codepointBin.length) {
-      throw new Error(`Mask length error; char: ${char}, codepoint: ${codepoint}, expected: ${codepointBin.length}, actual: ${cursor}`);
+      throwError(RangeError, 'Mask length error', {char: char, codepoint: codepoint, expected: codepointBin, actual: cursor});
     } else {
       return bin;
     }
   }
 }
 
-export function toB64(str) {
-
-  if (Array.from(str).some(char => char === '\x00')) {
-      throw new Error(`String for conversion contains null character at index ${str.indexOf('\x00')}`);  
-  }
+function toB64(str) {
 
   const bin = Array.from(str)
     .map(char => toUtf8Bin(char))
@@ -71,12 +82,12 @@ export function toB64(str) {
 
 }
 
-export function fromUtf8Bin(bin) {
+function fromUtf8Bin(bin) {
 
   const bytes = bin.length / 8;
 
   if ([1,2,3,4].indexOf(bytes) < 0) {
-    throw new Error(`Incorrect number of bytes: ${bytes}`)
+    throwError(RangeError, null, {'Incorrect number of bytes': bytes})
   }
 
   const mask = ranges.filter(range => range.bytes === bytes)[0].mask;
@@ -94,16 +105,16 @@ export function fromUtf8Bin(bin) {
   return String.fromCodePoint(codepoint);
 }
 
-export function fromB64(b64) {
+function fromB64(b64) {
 
   if (b64.length % 4 === 1) {
-    throw new Error('Invalid length for a b64 string');
+    throwError(RangeError, 'Invalid length for a b64 string');
   }
 
   const invalids = b64.replace(/=+$/, '').split('').filter(char => (b64Chars).indexOf(char) < 0);
 
   if (invalids.length) {
-    throw new Error(`Invalid base64 characters: ${invalids.map(el => `"${el}"`).join(', ')}`);
+    throwError(RangeError, null, {'Invalid base64 characters': invalids.join('')});
   }
 
   let bin = b64.replace(/=+$/, '').split('').map(el => b64Chars.indexOf(el).toString(2).padStart(6, '0')).join('');
@@ -113,7 +124,7 @@ export function fromB64(b64) {
   const mod = bin.length % 24;
 
   if ([0, 12, 18].indexOf(mod) === -1) {
-    throw new Error('Incorrect number of bits in b64 representation');
+    throwError(RangeError, 'Incorrect number of bits in b64 representation');
   }
 
   const chars = [];
@@ -131,14 +142,11 @@ export function fromB64(b64) {
       chars.push(fromUtf8Bin(bytes.slice(i, i + 4).join('')));
       i += 3;
     } else {
-      throw new Error(`Invalid UTF-8 character: ${bytes[i]}`);
+      throwError(RangeError, null, {'Invalid UTF-8 character': `0x${parseInt(bytes[i], 2).toString(16).toUpperCase()}`});
     }
   }
 
-  if (chars.some(char => char === '\x00')) {
-    throw new Error(`Converted string contains null character at index ${chars.indexOf('\x00')}`);  
-  }
-
   return chars.join('');
-
 }
+
+module.exports = { B64_ERROR_TYPE, fromB64, toB64, fromUtf8Bin, toUtf8Bin };

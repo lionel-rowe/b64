@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>UTF-8 Base64 Converter</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- import the webpage"s stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- import the webpage"s javascript file -->
+  </head>
+  <body>
+    <header>
+      <h1>UTF-8 Base64 Converter</h1>
+    </header>
+
+    <form class="form" id="form" action="/" method="GET">
+
+      <input type="hidden" id="direction" name="direction" value="{{directionLowerCase}}">
+
+      <div class="headers">
+        <div class="col-end">
+          <h2 class="type" id="srcType">{{from}}</h2>
+        </div>
+        <div class="col-mid">
+          <a href="?direction={{oppositeDirection}}" aria-label="Switch direction" id="directionalitySelector" >⇄</a>
+        </div>
+        <div class="col-end">
+          <h2 class="type" id="trgType">{{to}}</h2>
+        </div>
+      </div>
+
+      <div class="io">
+        <div class="textarea-and-arrow col50">
+          <div class="col-first src">
+            <textarea aria-label="Source" id="input" name="input" autofocus value="{{input}}" spellcheck="false">{{input}}</textarea>
+          </div>
+
+          <div class="arrow">
+            <div class="arrow-body"></div>
+            <div class="arrow-head"></div>
+          </div>
+        </div>
+
+        <div class="col50 col-last trg">
+          {{#if error}}
+            <div id="error">
+              <h3>{{error.title}}</h3>
+              <p>{{error.message}}</p>
+              <p>{{error.data}}</p>
+            </div>
+          {{/if}}
+          <pre id="output">{{result}}</pre> <!-- must be `pre` to minimize Firefox bugs with copying -->
+        </div>
+      </div>
+
+      <div class="button-container">
+        <input id="convertButton" class="submit-btn" type="submit" value="{{directionCapitalized}}">
+      </div>
+    </form>
+
+    {{#if js}}
+      <script src="bundle.js"></script>
+    {{/if}}
+
+    <script>
+      window.useJS = function(bool) {
+        var b = bool !== false;
+        document.cookie = "js=" + b;
+        window.location.reload();
+      }
+    </script>
+
+  </body>
+</html>
