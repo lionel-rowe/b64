@@ -15,7 +15,6 @@ app.use(cookieParser());
 
 const generateErrorMessage = e => {
   if (e.$$typeof === B64_ERROR_TYPE) {
-    console.log(JSON.stringify(e));
     return {
       message: e.message || '',
       data: e.data ? Object.keys(e.data).map(key => `${key}: ${e.data[key]}`).join('; ') : ''
@@ -26,7 +25,7 @@ const generateErrorMessage = e => {
 };
 
 app.get('/', (req, res, next) => {
-  
+
     const { input, direction } = req.query || {};
 
     const js = req.cookies.js !== 'false';
@@ -38,20 +37,20 @@ app.get('/', (req, res, next) => {
 
     let result = '';
     let error;
-  
+
     const from = decode ? 'Base64': 'Plaintext';
     const to = decode ? 'Plaintext' : 'Base64';
 
     const directionLowerCase = decode ? 'decode' : 'encode';
     const directionCapitalized = directionLowerCase[0].toUpperCase() + directionLowerCase.slice(1);
-  
+
     try {
       result = trimmedInput ? fn(input) : undefined;
     } catch(e) {
       error = generateErrorMessage(e);
       error.title = `Cannot ${directionCapitalized}`;
     }
-    
+
     res.render(__dirname + '/views/index.hbs', {
       from, to, result, error, js, directionLowerCase, directionCapitalized,
       input: trimmedInput,
@@ -61,11 +60,11 @@ app.get('/', (req, res, next) => {
 });
 
 app.get('/api/v1/:direction/:text', (req, res, next) => {
-    
+
   const { direction, text } = req.params;
-  
+
   let fn;
-  
+
   if (direction === 'encode') {
     fn = toB64;
   } else if (direction === 'decode') {
@@ -73,25 +72,25 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
   } else {
     return next();
   }
-  
+
   let result;
   let error;
-  
+
   try {
     result = fn(text);
   } catch(e) {
     error = generateErrorMessage(e);
   }
-  
+
   const data = {
     direction: 'encode',
     input: text
   };
-  
+
   result ? data.result = result : data.error = error;
-  
+
   res.json({ data });
-  
+
 });
 
 // app.get('/decode/:b64', (req, res, next) => {
@@ -104,7 +103,7 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
 //       result: fromB64(b64)
 //     }
 //   });
-  
+
 // });
 
 // listen for requests :)

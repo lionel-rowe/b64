@@ -1,0 +1,38 @@
+{
+  "//1": "describes your app and its dependencies",
+  "//2": "https://docs.npmjs.com/files/package.json",
+  "//3": "updating this file will download and update your packages",
+  "name": "b64",
+  "version": "0.0.1",
+  "description": "...",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "webpack && refresh"
+  },
+  "dependencies": {
+    "@babel/core": "^7.2.0",
+    "@babel/preset-env": "^7.2.0",
+    "babel-loader": "^8.0.5",
+    "express": "^4.16.4",
+    "webpack": "^4.29.0",
+    "express-handlebars": "^3.0.0",
+    "cookie-parser": "^1.4.3",
+    "sweetalert": "^2.1.2"
+  },
+  "engines": {
+    "node": "8.x"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/b64"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express"
+  ],
+  "devDependencies": {
+    "webpack-cli": "^3.2.1"
+  }
+}

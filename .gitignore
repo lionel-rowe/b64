@@ -7,7 +7,7 @@
 /coverage
 
 # production
-/build
+public/bundle*
 
 # misc
 .DS_Store
@@ -20,20 +20,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-src/App.css
-src/App.js
-src/App.test.js
-src/index.css
-src/index.js
-src/logo.svg
-src/registerServiceWorker.js
-
-# public
-package.json
-README.md
+package-lock.json
 
 .env*
 .bash_history
 .glitch-assets
 .node-gyp
-public/bundle*

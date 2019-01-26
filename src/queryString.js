@@ -4,9 +4,9 @@ const getQueries = () => {
 
 const getQuery = (key) => {
   const queries = getQueries();
-  
+
   const kEnc = encodeURIComponent(key);
-  
+
   const kv = queries.find(([k, _v]) => k === kEnc);
 
   return kv ? kv[1] : null;
@@ -39,14 +39,14 @@ const modifyQueries = (queries, k, v) => {
 
 const upsertQuery = (k, v) => {
 
-  if (window.history.pushState) {
+  if (window.history && window.history.replaceState) {
 
     const queries = getQueries();
     const newQueries = modifyQueries(queries, k, v);
     const newQueryString = makeQueryString(newQueries);
 
     const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}${newQueryString}`;
-      window.history.pushState({path: newUrl}, null, newUrl);
+      window.history.replaceState({path: newUrl}, null, newUrl);
   }
 
 };
