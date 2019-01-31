@@ -1,4 +1,4 @@
-const { fromB64, toB64, B64_ERROR_TYPE } = require('./b64');
+const { fromUtf8B64, toUtf8B64, fromUtf8Arr, toUtf8Arr, B64_ERROR_TYPE } = require('./b64');
 const { upsertQuery, getQuery } = require('./queryString');
 const swal = require('sweetalert');
 
@@ -72,7 +72,7 @@ form.addEventListener('submit', e => {
 
   try {
     src = encode ? input.value : input.value.trim();
-    trg = encode ? toB64(src) : fromB64(src);
+    trg = encode ? toUtf8B64(src) : fromUtf8B64(src);
     setVal(output, trg);
 
     upsertQuery('input', src);
@@ -134,3 +134,8 @@ if (errorEl) {
   directionalitySelector.addEventListener('keydown', removeErrorEl);
   form.addEventListener('submit', removeErrorEl);
 }
+
+window.fromUtf8B64 = fromUtf8B64;
+window.toUtf8B64 = toUtf8B64;
+window.fromUtf8Arr = fromUtf8Arr;
+window.toUtf8Arr = toUtf8Arr;

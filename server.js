@@ -1,4 +1,4 @@
-const { fromB64, toB64, B64_ERROR_TYPE } = require('./src/b64');
+const { fromUtf8B64, toUtf8B64, B64_ERROR_TYPE } = require('./src/b64');
 
 // init project
 const express = require('express');
@@ -32,7 +32,7 @@ app.get('/', (req, res, next) => {
 
     const decode = direction === 'decode';
 
-    const fn = decode ? fromB64 : toB64;
+    const fn = decode ? fromUtf8B64 : toUtf8B64;
     const trimmedInput = decode ? input && input.trim() : input;
 
     let result = '';
@@ -66,9 +66,9 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
   let fn;
 
   if (direction === 'encode') {
-    fn = toB64;
+    fn = toUtf8B64;
   } else if (direction === 'decode') {
-    fn = fromB64;
+    fn = fromUtf8B64;
   } else {
     return next();
   }
@@ -100,7 +100,7 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
 //     data: {
 //       direction: 'decode',
 //       input: b64,
-//       result: fromB64(b64)
+//       result: fromUtf8B64(b64)
 //     }
 //   });
 
