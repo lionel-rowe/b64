@@ -20,6 +20,7 @@ const generateErrorMessage = e => {
       data: e.data ? Object.keys(e.data).map(key => `${key}: ${e.data[key]}`).join('; ') : ''
     };
   } else {
+    console.log(e);
     return { message: 'An unknown error occurred.' }
   }
 };

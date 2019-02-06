@@ -4,21 +4,10 @@ const B64_ERROR_TYPE = 0xB64;
 // const pBin = n => console.log(n.toString(2));
 
 
-const concatInPlace = (arr1, arr2) => {
-  arr2.forEach(el => arr1[arr1.length] = el);
-  // Array.prototype.push.apply(arr1, arr2);
-};
-
-
-const throwError = (type, msg) => {
-  const self = { type };
-
-  const error = new self.type(msg || undefined);
-
-  error.$$typeof = B64_ERROR_TYPE;
-
-  throw error;
-};
+const TRAILING_ONES = new Array(9).fill().map((_el, idx) => Math.pow(2, idx) - 1);
+// [ 0b0, 0b1, ... 0b11111111 ]
+const LEADING_ONES = TRAILING_ONES.map((el, idx) => el << (8 - idx));
+// [ 0b0, 0b10000000, ... 0b11111111 ]
 
 
 const RULES = [ // https://en.wikipedia.org/wiki/UTF-8#Description
@@ -38,10 +27,26 @@ const RULES = [ // https://en.wikipedia.org/wiki/UTF-8#Description
 ];
 
 
-const TRAILING_ONES = new Array(9).fill().map((_el, idx) => Math.pow(2, idx) - 1);
-// [ 0b0, 0b1, ... 0b11111111 ]
-const LEADING_ONES = TRAILING_ONES.map((el, idx) => el << (8 - idx));
-// [ 0b0, 0b10000000, ... 0b11111111 ]
+const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+
+const B64_LOOKUP = {};
+B64_CHARS.forEach((char, idx) => B64_LOOKUP[char] = idx);
+
+
+const concatInPlace = (arr1, arr2) => {
+  arr2.forEach(el => arr1[arr1.length] = el);
+  // Array.prototype.push.apply(arr1, arr2);
+};
+
+const throwError = (type, msg) => {
+  const self = { type };
+
+  const error = new self.type(msg || undefined);
+
+  error.$$typeof = B64_ERROR_TYPE;
+
+  throw error;
+};
 
 
 const findRule = codepoint => {
@@ -74,7 +79,7 @@ const toUtf8Bin = char => {
 
 
 const toUtf8Arr = str => {
-  let out = [];
+  const out = [];
 
   Array.from(str).forEach(char => concatInPlace(out, toUtf8Bin(char)));
 
@@ -90,7 +95,7 @@ const fromUtf8Arr = utf8Arr => {
   let trailingByteCounter = -1;
   let rule, header, dataLength, outCodePoint;
 
-  utf8Arr.forEach(byte => {
+  utf8Arr.forEach((byte, idx) => {
     if (trailingByteCounter < 0) {
       outCodePoint = 0;
 
@@ -102,7 +107,7 @@ const fromUtf8Arr = utf8Arr => {
         return (header << dataLength & LEADING_ONES[8 - dataLength]) === (byte & LEADING_ONES[8 - dataLength]);
       });
 
-      if (!rule) throwError(RangeError, `Invalid UTF-8 byte at index \`${i}\``);
+      if (!rule) throwError(RangeError, `Invalid UTF-8 byte at index \`${idx}\``);
     }
 
     [ header, dataLength, offsetRight ] = rule.pattern[rule.pattern.length - trailingByteCounter - 1];
@@ -171,12 +176,6 @@ const fromUtf8Arr = utf8Arr => {
 // );
 
 
-const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
-
-const B64_LOOKUP = {};
-B64_CHARS.forEach((char, idx) => B64_LOOKUP[char] = idx);
-
-
 const toB64 = bytes => {
   const b64 = [];
 
@@ -185,19 +184,19 @@ const toB64 = bytes => {
 
     const sextets = [];
 
-    sextets[sextets.length] = octets[0] >> 2;
+    sextets[0] = octets[0] >> 2;
 
-    sextets[sextets.length] = (octets[0] & TRAILING_ONES[2] << 4);
+    sextets[1] = (octets[0] & TRAILING_ONES[2]) << 4;
 
     if (typeof octets[1] !== 'undefined') {
       sextets[1] |= octets[1] >> 4;
-      sextets[sextets.length] = (octets[1] & TRAILING_ONES[4] << 2);
-    } else sextets[sextets.length] = -1;
+      sextets[2] = (octets[1] & TRAILING_ONES[4]) << 2;
+    } else sextets[2] = -1;
 
     if (typeof octets[2] !== 'undefined') {
       sextets[2] |= octets[2] >> 6;
-      sextets[sextets.length] = octets[2] & TRAILING_ONES[6];
-    } else sextets[sextets.length] = -1;
+      sextets[3] = octets[2] & TRAILING_ONES[6];
+    } else sextets[3] = -1;
 
     sextets.forEach(sextet => b64[b64.length] = sextet === -1 ? '=' : B64_CHARS[sextet]);
   }
@@ -212,7 +211,7 @@ const toUtf8B64 = str => {
 
 
 const fromB64 = b64 => {
-  let bytes = [];
+  const bytes = [];
 
   while (b64[b64.length - 1] === '=') {
     b64 = b64.slice(0, b64.length - 1);
@@ -239,12 +238,12 @@ const fromB64 = b64 => {
 
     if (typeof sextets[1] !== 'undefined') {
       octets[0] |= sextets[1] >> 4;
-      octets[octets.length] = (sextets[1] & TRAILING_ONES[4] << 4);
+      octets[octets.length] = (sextets[1] & TRAILING_ONES[4]) << 4;
     }
 
     if (typeof sextets[2] !== 'undefined') {
       octets[1] |= sextets[2] >> 2;
-      octets[octets.length] = (sextets[2] & TRAILING_ONES[2] << 6);
+      octets[octets.length] = (sextets[2] & TRAILING_ONES[2]) << 6;
     }
 
     if (typeof sextets[3] !== 'undefined') {
@@ -305,7 +304,7 @@ const fromUtf8B64 = b64 => {
 // p('Passed: ', g, 'Failed: ', f);
 
 
-// p(toUtf8B64('\ufeff💩 ~\xa0ÿ一鿕鑫😀🙏𝔘Áλ'))
+// p(toUtf8B64('\ufeff💩 ~\xa0ÿ一鿕鑫😀🙏𝔘Áλ\0'))
 // 77u/8J+SqSB+wqDDv+S4gOm/lemRq/CfmIDwn5mP8J2UmMOBzrsA
 
 module.exports = { B64_ERROR_TYPE, fromUtf8Arr, toUtf8Arr, fromUtf8B64, toUtf8B64 };
