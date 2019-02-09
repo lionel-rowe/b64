@@ -48,8 +48,8 @@
           {{#if error}}
             <div id="error">
               <h3>{{error.title}}</h3>
-              <p>{{error.message}}</p>
-              <p>{{error.data}}</p>
+              <p>{{{error.message}}}</p>
+              <!-- <p>{{error.data}}</p> -->
             </div>
           {{/if}}
           <pre id="output">{{result}}</pre> <!-- must be `pre` to minimize Firefox bugs with copying -->

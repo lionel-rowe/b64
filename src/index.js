@@ -1,4 +1,4 @@
-const { fromUtf8B64, toUtf8B64, fromUtf8Arr, toUtf8Arr, B64_ERROR_TYPE } = require('./b64');
+const { utf8Encode, utf8Decode, B64_ERROR_TYPE } = require('./b64');
 const { upsertQuery, getQuery } = require('./queryString');
 const swal = require('sweetalert');
 
@@ -36,8 +36,8 @@ let [ src, trg ] = [
 const flipDirectionality = () => {
   encode = !encode;
 
-  setVal(srcType, encode ? 'Plaintext' : 'Base64');
-  setVal(trgType, encode ? 'Base64' : 'Plaintext');
+  setVal(srcType, encode ? 'Text' : 'Base64');
+  setVal(trgType, encode ? 'Base64' : 'Text');
 
   setVal(convertButton, encode ? 'Encode' : 'Decode');
 
@@ -72,7 +72,7 @@ form.addEventListener('submit', e => {
 
   try {
     src = encode ? input.value : input.value.trim();
-    trg = encode ? toUtf8B64(src) : fromUtf8B64(src);
+    trg = encode ? utf8Encode(src) : utf8Decode(src);
     setVal(output, trg);
 
     upsertQuery('input', src);
@@ -85,27 +85,27 @@ form.addEventListener('submit', e => {
       if (e.message) {
         const msgDiv = document.createElement('div');
 
-        msgDiv.textContent = e.message;
+        msgDiv.innerHTML = e.message;
         mainDiv.appendChild(msgDiv);
       }
 
-      if (e.data) {
-        const dataDiv = document.createElement('div');
+      // if (e.data) {
+      //   const dataDiv = document.createElement('div');
 
-        Object.keys(e.data).forEach(key => {
+      //   Object.keys(e.data).forEach(key => {
 
-          const k = document.createElement('span');
-          k.textContent = `${key}: `;
+      //     const k = document.createElement('span');
+      //     k.textContent = `${key}: `;
 
-          const v = document.createElement('code');
-          v.textContent = e.data[key];
+      //     const v = document.createElement('code');
+      //     v.textContent = e.data[key];
 
-          dataDiv.appendChild(k);
-          dataDiv.appendChild(v);
-        });
+      //     dataDiv.appendChild(k);
+      //     dataDiv.appendChild(v);
+      //   });
 
-        mainDiv.appendChild(dataDiv);
-      }
+      //   mainDiv.appendChild(dataDiv);
+      // }
 
       swal({
         title: `Cannot ${encode ? 'Encode' : 'Decode'}`,
@@ -135,7 +135,7 @@ if (errorEl) {
   form.addEventListener('submit', removeErrorEl);
 }
 
-window.fromUtf8B64 = fromUtf8B64;
-window.toUtf8B64 = toUtf8B64;
-window.fromUtf8Arr = fromUtf8Arr;
-window.toUtf8Arr = toUtf8Arr;
+window.utf8Decode = utf8Decode;
+window.utf8Encode = utf8Encode;
+// window.fromUtf8Str = fromUtf8Str;
+// window.toUtf8Str = toUtf8Str;

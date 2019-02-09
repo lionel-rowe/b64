@@ -1,9 +1,9 @@
-const { fromUtf8B64, toUtf8B64, B64_ERROR_TYPE } = require('./src/b64');
-
-// init project
 const express = require('express');
 const exphbs  = require('express-handlebars');
 const cookieParser = require('cookie-parser');
+const useragent = require('useragent');
+
+const { utf8Encode, utf8Decode, B64_ERROR_TYPE } = require('./src/b64');
 
 const app = express();
 
@@ -17,7 +17,7 @@ const generateErrorMessage = e => {
   if (e.$$typeof === B64_ERROR_TYPE) {
     return {
       message: e.message || '',
-      data: e.data ? Object.keys(e.data).map(key => `${key}: ${e.data[key]}`).join('; ') : ''
+      // data: e.data ? Object.keys(e.data).map(key => `${key}: ${e.data[key]}`).join('; ') : ''
     };
   } else {
     console.log(e);
@@ -26,14 +26,16 @@ const generateErrorMessage = e => {
 };
 
 app.get('/', (req, res, next) => {
+    const ua = useragent.parse(req.headers['user-agent']);
+    const isModern = ['IE', 'Opera Mini'].every(el => ua.family !== el); //rough approximation
 
     const { input, direction } = req.query || {};
 
-    const js = req.cookies.js !== 'false';
+    const js = isModern && (req.cookies.js !== 'false');
 
     const decode = direction === 'decode';
 
-    const fn = decode ? fromUtf8B64 : toUtf8B64;
+    const fn = decode ? utf8Decode : utf8Encode;
     const trimmedInput = decode ? input && input.trim() : input;
 
     let result = '';
@@ -67,9 +69,9 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
   let fn;
 
   if (direction === 'encode') {
-    fn = toUtf8B64;
+    fn = utf8Encode;
   } else if (direction === 'decode') {
-    fn = fromUtf8B64;
+    fn = utf8Decode;
   } else {
     return next();
   }
@@ -101,7 +103,7 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
 //     data: {
 //       direction: 'decode',
 //       input: b64,
-//       result: fromUtf8B64(b64)
+//       result: utf8Decode(b64)
 //     }
 //   });
 
