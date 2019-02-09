@@ -1,4 +1,4 @@
-const { TRAILING_ONES, LEADING_ONES, initDict } = require('./utils');
+const { TRAILING_ONES, LEADING_ONES, initDict, htmlCodeVars } = require('./utils');
 
 
 const RULES = [ // https://en.wikipedia.org/wiki/UTF-8#Description

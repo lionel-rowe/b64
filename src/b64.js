@@ -1,4 +1,4 @@
-const { TRAILING_ONES, LEADING_ONES, initDict } = require('./utils');
+const { TRAILING_ONES, LEADING_ONES, initDict, htmlCodeVars } = require('./utils');
 const { fromUtf8Str, toUtf8Str } = require('./utf8');
 
 const hasSymbol = typeof Symbol === 'function';
@@ -11,26 +11,6 @@ const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345678
 const B64_LOOKUP = {};
 B64_CHARS.forEach((char, idx) => B64_LOOKUP[char] = idx);
 
-const ESCAPE_SEQUENCES = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-};
-
-
-const htmlCodeVars = (strs, ...vals) => {
-  return strs.reduce((out, curr, idx) => {
-    out += curr;
-    const val = vals[idx];
-    if (typeof val !== 'undefined') {
-      out += '<code>';
-      out += String(val).replace(/[&<>]/g, m => ESCAPE_SEQUENCES[m]);
-      out += '</code>';
-    }
-
-    return out;
-  }, '');
-};
 
 const concatInPlace = (arr1, arr2) => {
   arr2.forEach(el => arr1[arr1.length] = el);
