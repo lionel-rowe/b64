@@ -43,9 +43,8 @@ const toUtf8Bin = char => {
     return headerShifted | codepointShifted;
   });
 
-  // return bytes;
-  return bytes.map(b => String.fromCodePoint(b)).join('');
-
+  return bytes.map(b => String.fromCharCode(b)).join('');
+  //for semantic reasons, not fromCodePoint
 };
 
 
@@ -54,7 +53,6 @@ const toUtf8Str = nativeStr => {
 
   const out = [];
 
-  // Array.from(nativeStr).forEach(char => concatInPlace(out, toUtf8Bin(char)));
   return Array.from(nativeStr).map(char => {
     if (dict[char]) {
       return dict[char];
@@ -65,19 +63,24 @@ const toUtf8Str = nativeStr => {
     }
   }).join('');
 
-  // return out;
 };
 
 
-const fromUtf8Str = utf8Arr => {// ~!!!!!!!!!!!!!!!!!!!
+const fromUtf8Str = utf8Str => {
+  const dict = initDict();
+
   const outStrArr = [];
 
-  const len = utf8Arr.length;
+  const len = utf8Str.length;
 
   let trailingByteCounter = -1;
   let rule, header, dataLength, outCodePoint;
 
-  utf8Arr.forEach((byte, idx) => {
+  utf8Str.split('').forEach((char, idx) => {
+
+    const byte = char.charCodeAt();
+    //for semantic reasons, not codePointAt
+
     if (trailingByteCounter < 0) {
       outCodePoint = 0;
 
@@ -95,7 +98,7 @@ const fromUtf8Str = utf8Arr => {// ~!!!!!!!!!!!!!!!!!!!
     [ header, dataLength, offsetRight ] = rule.pattern[rule.pattern.length - trailingByteCounter - 1];
 
     if ((header << dataLength & LEADING_ONES[8 - dataLength]) !== (byte & LEADING_ONES[8 - dataLength])) {
-      throw new RangeError(htmlCodeVars`Invalid UTF-8 byte at index ${i}`);
+      throw new RangeError(htmlCodeVars`Invalid UTF-8 byte at index ${idx}`);
     }
 
     const outBits = byte & TRAILING_ONES[dataLength];

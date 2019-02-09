@@ -6,10 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- import the webpage"s stylesheet -->
     <link rel="stylesheet" href="style.css">
-
-    <!-- import the webpage"s javascript file -->
   </head>
   <body>
     <header>
@@ -49,10 +46,9 @@
             <div id="error">
               <h3>{{error.title}}</h3>
               <p>{{{error.message}}}</p>
-              <!-- <p>{{error.data}}</p> -->
             </div>
           {{/if}}
-          <pre id="output">{{result}}</pre> <!-- must be `pre` to minimize Firefox bugs with copying -->
+          <pre id="output">{{result}}</pre> <!-- must be `pre` to minimize Firefox bugs with copy/pasting whitespace -->
         </div>
       </div>
 

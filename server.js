@@ -17,7 +17,6 @@ const generateErrorMessage = e => {
   if (e.$$typeof === B64_ERROR_TYPE) {
     return {
       message: e.message || '',
-      // data: e.data ? Object.keys(e.data).map(key => `${key}: ${e.data[key]}`).join('; ') : ''
     };
   } else {
     console.log(e);
@@ -95,19 +94,6 @@ app.get('/api/v1/:direction/:text', (req, res, next) => {
   res.json({ data });
 
 });
-
-// app.get('/decode/:b64', (req, res, next) => {
-//   const { b64 } = req.params;
-
-//   res.json({
-//     data: {
-//       direction: 'decode',
-//       input: b64,
-//       result: utf8Decode(b64)
-//     }
-//   });
-
-// });
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {

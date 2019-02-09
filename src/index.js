@@ -89,24 +89,6 @@ form.addEventListener('submit', e => {
         mainDiv.appendChild(msgDiv);
       }
 
-      // if (e.data) {
-      //   const dataDiv = document.createElement('div');
-
-      //   Object.keys(e.data).forEach(key => {
-
-      //     const k = document.createElement('span');
-      //     k.textContent = `${key}: `;
-
-      //     const v = document.createElement('code');
-      //     v.textContent = e.data[key];
-
-      //     dataDiv.appendChild(k);
-      //     dataDiv.appendChild(v);
-      //   });
-
-      //   mainDiv.appendChild(dataDiv);
-      // }
-
       swal({
         title: `Cannot ${encode ? 'Encode' : 'Decode'}`,
         content: mainDiv,
@@ -137,5 +119,3 @@ if (errorEl) {
 
 window.utf8Decode = utf8Decode;
 window.utf8Encode = utf8Encode;
-// window.fromUtf8Str = fromUtf8Str;
-// window.toUtf8Str = toUtf8Str;

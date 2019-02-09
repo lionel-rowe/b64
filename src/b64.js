@@ -67,7 +67,9 @@ const toB64 = byteString => {
 
 
 const fromB64 = b64 => {
-  const bytes = [];
+  const dict = initDict();
+
+  let byteString = '';
 
   while (b64[b64.length - 1] === '=') {
     b64 = b64.slice(0, b64.length - 1);
@@ -75,43 +77,52 @@ const fromB64 = b64 => {
 
   const remainder = b64.length % 4;
 
-  const b64Bin = b64.split('').map((char, idx) => {
-    const val = B64_LOOKUP[char];
+  while (b64.length) {
+    const b64Slice = b64.slice(0, 4);
 
-    if (typeof val === 'undefined') {
-      throw new RangeError(htmlCodeVars`Invalid Base64 character ${char} at index ${idx}`);
+    b64 = b64.slice(4);
+
+    if (dict[b64Slice]) {
+      byteString +=  dict[b64Slice];
+    } else {
+      const sextets = b64Slice.split('').map((char, idx) => {
+        const val = B64_LOOKUP[char];
+
+        if (typeof val === 'undefined') {
+          throw new RangeError(htmlCodeVars`Invalid Base64 character ${char} at index ${idx}`);
+        }
+
+        return val;
+      });
+
+      const octets = [];
+
+      octets[octets.length] = sextets[0] << 2;
+
+      if (typeof sextets[1] !== 'undefined') {
+        octets[0] |= sextets[1] >> 4;
+        octets[octets.length] = (sextets[1] & TRAILING_ONES[4]) << 4;
+      }
+
+      if (typeof sextets[2] !== 'undefined') {
+        octets[1] |= sextets[2] >> 2;
+        octets[octets.length] = (sextets[2] & TRAILING_ONES[2]) << 6;
+      }
+
+      if (typeof sextets[3] !== 'undefined') {
+        octets[2] |= sextets[3];
+      }
+
+      const result = octets.map(octet => String.fromCharCode(octet)).join('');
+
+      dict[b64Slice] = result;
+      byteString += result;
     }
-
-    return val;
-
-  });
-
-  while (b64Bin.length) {
-    const sextets = b64Bin.splice(0, 4);
-    const octets = [];
-
-    octets[octets.length] = sextets[0] << 2;
-
-    if (typeof sextets[1] !== 'undefined') {
-      octets[0] |= sextets[1] >> 4;
-      octets[octets.length] = (sextets[1] & TRAILING_ONES[4]) << 4;
-    }
-
-    if (typeof sextets[2] !== 'undefined') {
-      octets[1] |= sextets[2] >> 2;
-      octets[octets.length] = (sextets[2] & TRAILING_ONES[2]) << 6;
-    }
-
-    if (typeof sextets[3] !== 'undefined') {
-      octets[2] |= sextets[3];
-    }
-
-    concatInPlace(bytes, octets);
   }
 
-  if (remainder && (bytes[bytes.length - 1] === 0)) bytes.pop();
+  if (remainder && (byteString[byteString.length - 1] === '\0')) byteString = byteString.slice(0, byteString.length - 1);
 
-  return bytes;
+  return byteString;
 };
 
 
@@ -131,5 +142,6 @@ const utf8Decode = b64 => {
     throwB64Error(e);
   }
 };
+
 
 module.exports = { utf8Encode, utf8Decode, B64_ERROR_TYPE };
