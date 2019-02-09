@@ -41,8 +41,8 @@ app.get('/', (req, res, next) => {
     let result = '';
     let error;
 
-    const from = decode ? 'Base64': 'Plaintext';
-    const to = decode ? 'Plaintext' : 'Base64';
+    const from = decode ? 'Base64': 'Text';
+    const to = decode ? 'Text' : 'Base64';
 
     const directionLowerCase = decode ? 'decode' : 'encode';
     const directionCapitalized = directionLowerCase[0].toUpperCase() + directionLowerCase.slice(1);

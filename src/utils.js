@@ -10,4 +10,4 @@ const initDict = () => {
   return dict;
 };
 
-module.exports = { TRAILING_ONES, LEADING_ONES };
+module.exports = { TRAILING_ONES, LEADING_ONES, initDict };
