@@ -1,152 +1,147 @@
-const b64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
+const { TRAILING_ONES, LEADING_ONES, initDict, htmlCodeVars } = require('./utils');
+const { fromUtf8Str, toUtf8Str } = require('./utf8');
 
-const ranges = [
-  {bytes: 1, min: 0x0000, max: 0x007f, mask: '0xxxxxxx'},
-  {bytes: 2, min: 0x0080, max: 0x07ff, mask: '110xxxxx10xxxxxx'},
-  {bytes: 3, min: 0x0800, max: 0xffff, mask: '1110xxxx10xxxxxx10xxxxxx'},
-  {bytes: 4, min: 0x10000, max: 0x10ffff, mask: '11110xxx10xxxxxx10xxxxxx10xxxxxx'}
-];
+const hasSymbol = typeof Symbol === 'function';
 
-// https://github.com/facebook/react/blob/8482cbe22d1a421b73db602e1f470c632b09f693/packages/shared/ReactSymbols.js#L14-L16
+const B64_ERROR_TYPE = hasSymbol ? Symbol('b64') : 0xB64;
+//`Symbol()` creates a unique symbol, unlike `Symbol.for()`
 
-const B64_ERROR_TYPE = 0xB64;
+const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
 
-const throwError = (type, msg, data) => {
-  const self = { type };
-  
-  const error = new self.type(msg || undefined);
-  if (data) error.data = data;
-  
-  error.$$typeof = B64_ERROR_TYPE;
-    
-  throw error;
+const B64_LOOKUP = {};
+B64_CHARS.forEach((char, idx) => B64_LOOKUP[char] = idx);
+
+
+const concatInPlace = (arr1, arr2) => {
+  arr2.forEach(el => arr1[arr1.length] = el);
 };
 
-function toUtf8Bin(char) {
+const throwB64Error = e => {
+  e.$$typeof = B64_ERROR_TYPE;
 
-  const codepoint = char.codePointAt();
-  let mask;
+  throw e;
+};
 
-  ranges.forEach(range => {
-    if (codepoint >= range.min && codepoint <= range.max) {
-      mask = range.mask.split('');
+
+const toB64 = byteString => {
+  const dict = initDict();
+
+  let b64 = '';
+
+  while (byteString.length) {
+    const bytes = byteString.slice(0, 3);
+    byteString = byteString.slice(3);
+
+    if (dict[bytes]) {
+      b64 +=  dict[bytes];
+    } else {
+      let result = '';
+
+      const octets = bytes.split('').map(ch => ch.codePointAt());
+
+      const sextets = [];
+
+      sextets[0] = octets[0] >> 2;
+
+      sextets[1] = (octets[0] & TRAILING_ONES[2]) << 4;
+
+      if (typeof octets[1] !== 'undefined') {
+        sextets[1] |= octets[1] >> 4;
+        sextets[2] = (octets[1] & TRAILING_ONES[4]) << 2;
+      } else sextets[2] = -1;
+
+      if (typeof octets[2] !== 'undefined') {
+        sextets[2] |= octets[2] >> 6;
+        sextets[3] = octets[2] & TRAILING_ONES[6];
+      } else sextets[3] = -1;
+
+      sextets.forEach(sextet => result += sextet === -1 ? '=' : B64_CHARS[sextet]);
+
+      dict[bytes] = result;
+      b64 += result;
     }
-  });
+  }
 
-  if (!mask) {
-    throwError(RangeError, null, {'Invalid codepoint': codepoint});
-  } else {
+  return b64;
+};
 
-    let contentBits = mask.filter(el => el === 'x').length;
 
-    const codepointBin = codepoint.toString(2).padStart(contentBits, '0');
+const fromB64 = b64 => {
+  const dict = initDict();
 
-    let cursor = 0;
-    const bin = mask.map(el => {
+  let byteString = '';
 
-      let newEl;
+  while (b64[b64.length - 1] === '=') {
+    b64 = b64.slice(0, b64.length - 1);
+  }
 
-      if (el === 'x') {
-        newEl = codepointBin[cursor];
-        cursor++;
+  const remainder = b64.length % 4;
+
+  while (b64.length) {
+    const b64Slice = b64.slice(0, 4);
+
+    b64 = b64.slice(4);
+
+    if (dict[b64Slice]) {
+      byteString +=  dict[b64Slice];
+    } else {
+      const sextets = b64Slice.split('').map((char, idx) => {
+        const val = B64_LOOKUP[char];
+
+        if (typeof val === 'undefined') {
+          throw new RangeError(htmlCodeVars`Invalid Base64 character ${char} at index ${idx}`);
+        }
+
+        return val;
+      });
+
+      const octets = [];
+
+      octets[octets.length] = sextets[0] << 2;
+
+      if (typeof sextets[1] !== 'undefined') {
+        octets[0] |= sextets[1] >> 4;
+        octets[octets.length] = (sextets[1] & TRAILING_ONES[4]) << 4;
       }
 
-      return newEl || el;
-    }).join('');
+      if (typeof sextets[2] !== 'undefined') {
+        octets[1] |= sextets[2] >> 2;
+        octets[octets.length] = (sextets[2] & TRAILING_ONES[2]) << 6;
+      }
 
-    if (cursor !== codepointBin.length) {
-      throwError(RangeError, 'Mask length error', {char: char, codepoint: codepoint, expected: codepointBin, actual: cursor});
-    } else {
-      return bin;
-    }
-  }
-}
+      if (typeof sextets[3] !== 'undefined') {
+        octets[2] |= sextets[3];
+      }
 
-function toB64(str) {
+      const result = octets.map(octet => String.fromCharCode(octet)).join('');
 
-  const bin = Array.from(str)
-    .map(char => toUtf8Bin(char))
-    .join('')
-    .split(/(.{6})/)
-    .filter(el => el);
-
-  const lastBin = bin[bin.length - 1];
-  const equalses = lastBin ? '='.repeat((6 - lastBin.length) / 2) : '';
-  if (lastBin) {
-    bin[bin.length - 1] = lastBin.padEnd(6, '0');
-  }
-
-  const result = bin.map(el => b64Chars[parseInt(el, 2)]).join('') + equalses;
-
-  return result;
-
-}
-
-function fromUtf8Bin(bin) {
-
-  const bytes = bin.length / 8;
-
-  if ([1,2,3,4].indexOf(bytes) < 0) {
-    throwError(RangeError, null, {'Incorrect number of bytes': bytes})
-  }
-
-  const mask = ranges.filter(range => range.bytes === bytes)[0].mask;
-
-  let codepointBin = '';
-
-  bin.split('').forEach((bit, idx) => {
-    if (mask[idx] === 'x') {
-      codepointBin += bit;
-    }
-  });
-
-  const codepoint = parseInt(codepointBin, 2)
-
-  return String.fromCodePoint(codepoint);
-}
-
-function fromB64(b64) {
-
-  if (b64.length % 4 === 1) {
-    throwError(RangeError, 'Invalid length for a b64 string');
-  }
-
-  const invalids = b64.replace(/=+$/, '').split('').filter(char => (b64Chars).indexOf(char) < 0);
-
-  if (invalids.length) {
-    throwError(RangeError, null, {'Invalid base64 characters': invalids.join('')});
-  }
-
-  let bin = b64.replace(/=+$/, '').split('').map(el => b64Chars.indexOf(el).toString(2).padStart(6, '0')).join('');
-
-  const bytes = bin.split(/(.{8})/).filter(el => el.length === 8);
-
-  const mod = bin.length % 24;
-
-  if ([0, 12, 18].indexOf(mod) === -1) {
-    throwError(RangeError, 'Incorrect number of bits in b64 representation');
-  }
-
-  const chars = [];
-
-  for (let i = 0; i < bytes.length; i++) {
-    if (/^0/.test(bytes[i])) {
-      chars.push(fromUtf8Bin(bytes[i]));
-    } else if (/^110/.test(bytes[i])) {
-      chars.push(fromUtf8Bin(bytes.slice(i, i + 2).join('')));
-      i += 1;
-    } else if (/^1110/.test(bytes[i])) {
-      chars.push(fromUtf8Bin(bytes.slice(i, i + 3).join('')));
-      i += 2;
-    } else if (/^11110/.test(bytes[i])) {
-      chars.push(fromUtf8Bin(bytes.slice(i, i + 4).join('')));
-      i += 3;
-    } else {
-      throwError(RangeError, null, {'Invalid UTF-8 character': `0x${parseInt(bytes[i], 2).toString(16).toUpperCase()}`});
+      dict[b64Slice] = result;
+      byteString += result;
     }
   }
 
-  return chars.join('');
-}
+  if (remainder && (byteString[byteString.length - 1] === '\0')) byteString = byteString.slice(0, byteString.length - 1);
 
-module.exports = { B64_ERROR_TYPE, fromB64, toB64, fromUtf8Bin, toUtf8Bin };
+  return byteString;
+};
+
+
+const utf8Encode = str => {
+  try {
+    return toB64(toUtf8Str(str));
+  } catch(e) {
+    throwB64Error(e);
+  }
+};
+
+
+const utf8Decode = b64 => {
+  try {
+    return fromUtf8Str(fromB64(b64));
+  } catch(e) {
+    throwB64Error(e);
+  }
+};
+
+
+module.exports = { utf8Encode, utf8Decode, B64_ERROR_TYPE };
