@@ -69,6 +69,8 @@ const toB64 = byteString => {
 const fromB64 = b64 => {
   const dict = initDict();
 
+  b64 = b64.replace(/\s+/g, '');
+
   let byteString = '';
 
   while (b64[b64.length - 1] === '=') {
