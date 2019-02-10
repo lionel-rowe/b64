@@ -29,7 +29,7 @@ directionalitySelector.removeAttribute('href');
 let encode = getQuery('direction') !== 'decode';
 
 let [ src, trg ] = [
-  encode ? input.value : input.value.trim(),
+  input.value,
   output.value || output.textContent
 ];
 
@@ -55,7 +55,7 @@ const flip = e => {
 
   flipDirectionality();
 
-  upsertQuery('input', encode ? input.value : input.value.trim());
+  upsertQuery('input', input.value);
   upsertQuery('direction', encode ? 'encode' : 'decode');
 };
 
@@ -71,7 +71,7 @@ form.addEventListener('submit', e => {
   e.preventDefault();
 
   try {
-    src = encode ? input.value : input.value.trim();
+    src = input.value;
     trg = encode ? utf8Encode(src) : utf8Decode(src);
     setVal(output, trg);
 
